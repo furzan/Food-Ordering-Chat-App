@@ -4,6 +4,7 @@ from typing import Optional
 import os
 
 # Configure your API endpoint here
+base_url  = os.getenv("BASE_SERVER_URL")
 AUTH_API_URL = os.getenv("AUTH_API_URL", "http://http://127.0.0.1:8000/api/v1/user/login")
 
 @cl.password_auth_callback
@@ -24,8 +25,7 @@ async def auth_callback(username: str, password: str) -> Optional[cl.User]:
                 data={
                     "username": username,
                     "password": password
-                },
-                timeout=10.0
+                }
             )
             
             # Check if authentication was successful
@@ -91,11 +91,26 @@ async def main(message: cl.Message):
     msg = cl.Message(content="")
     await msg.send()
     
-    # Simulate processing (replace with your actual logic)
-    response = f"Hello **{user.identifier}**! You said: *{message.content}*\n\nI received your message and I'm here to help!"
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                base_url + '/message',
+                json={
+                    "message": message.content,
+                }
+            )
+            if response.status_code == 200:
+                data = response.json()
+                ans = data.get("message")
+            else:
+                ans = f"Error: {response.status_code}"
+            
+    except Exception as e:
+        ans = e
+    
     
     # Update the message with the response
-    msg.content = response
+    msg.content = ans
     await msg.update()
 
 

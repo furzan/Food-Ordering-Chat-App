@@ -5,10 +5,13 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import sessionmaker
 from backend.config import config
 from backend.app.db.models.user_model import Users
+from backend.app.db.models.menu_model import Menu
+from backend.app.db.models.order_model import Order
+from backend.app.db.models.orderitems_model import OrderItem
 
 
 engine = create_async_engine(
-            url= config.DATABASE_URL,
+            url= config.DB_URL,
             echo= True
         )
     

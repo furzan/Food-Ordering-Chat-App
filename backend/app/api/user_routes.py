@@ -4,6 +4,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from backend.app.db.main import get_session
 from backend.app.services.user_service import user_service
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from pydantic import BaseModel
 
 router = APIRouter()
 userservice = user_service()
@@ -22,3 +23,12 @@ async def verify_login(form_data: OAuth2PasswordRequestForm = Depends(), session
     if not is_verified:
         raise HTTPException(status_code= status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
     return {"access_token": is_verified, "token_type": "bearer"}
+
+
+class UserMessage(BaseModel):
+    message: str
+
+@router.post('/message', status_code= status.HTTP_200_OK)
+async def response_message( inp: UserMessage) -> dict:
+    response = {"message": f"You said: {inp.message}"}
+    return response
