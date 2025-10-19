@@ -1,8 +1,10 @@
 from fastapi import APIRouter, status, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from backend.app.db.schemas import user, token
 from sqlmodel.ext.asyncio.session import AsyncSession
 from backend.app.db.main import get_session
 from backend.app.services.user_service import user_service
+from backend.app.agents.main import agent_stream_generator
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 
@@ -28,7 +30,14 @@ async def verify_login(form_data: OAuth2PasswordRequestForm = Depends(), session
 class UserMessage(BaseModel):
     message: str
 
+
 @router.post('/message', status_code= status.HTTP_200_OK)
 async def response_message( inp: UserMessage) -> dict:
-    response = {"message": f"You said: {inp.message}"}
-    return response
+    # response = {"message": f"You said: {inp.message}"}
+    return StreamingResponse(
+        agent_stream_generator(inp.message, 'user3'),
+        # Crucially, set the correct media type for a text stream
+        media_type="text/plain" 
+        # Note: If you wanted full SSE, you'd use 'text/event-stream' 
+        # and format the yield output as 'data: <token>\n\n'
+    )

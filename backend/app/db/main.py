@@ -8,6 +8,9 @@ from backend.app.db.models.user_model import Users
 from backend.app.db.models.menu_model import Menu
 from backend.app.db.models.order_model import Order
 from backend.app.db.models.orderitems_model import OrderItem
+from backend.app.db.models.conversation_msg_model import ConversationMessage
+from backend.app.db.models.cart_model import CartItem
+
 
 
 engine = create_async_engine(

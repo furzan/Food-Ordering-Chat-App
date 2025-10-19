@@ -7,6 +7,8 @@ class Order(SQLModel, table=True):
     
     username: str = Field(foreign_key="users.username")
     
+    status: str
+    
     items: list["OrderItem"] = Relationship(back_populates="order")
     
     user: "Users" = Relationship(back_populates="orders")

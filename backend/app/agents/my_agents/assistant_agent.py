@@ -1,5 +1,5 @@
 from agents import Agent
-from my_config.gemini_config import MODEL
+from backend.app.agents.my_config.gemini_config import MODEL
 
 agent = Agent(
     name = "assistant", 

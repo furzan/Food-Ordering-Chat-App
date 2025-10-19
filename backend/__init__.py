@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from backend.app.api.user_routes import router 
+from backend.app.api.order_routes import router as order_router
 from contextlib import asynccontextmanager
 from backend.app.db.main import init_db
 
@@ -19,3 +20,4 @@ app = FastAPI(
 ) 
 
 app.include_router(router, prefix=f"/api/{version}/user")
+app.include_router(order_router, prefix=f"/api/{version}/order")

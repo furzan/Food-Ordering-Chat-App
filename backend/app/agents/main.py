@@ -1,53 +1,38 @@
 from agents import Runner, set_tracing_disabled, SQLiteSession
-from my_agents.assistant_agent import agent
+from backend.app.agents.my_agents.assistant_agent import agent
 from openai.types.responses import ResponseTextDeltaEvent
 import asyncio
+from backend.app.services.agent_service import PostgresSession
+from backend.app.db.main import get_session
+import uuid
 
 set_tracing_disabled(True)
 
-session = SQLiteSession("user1", "./db/conversation1.db" )
+async def agent_stream_generator(prompt: str, conversation_id: str | None = None):
+    """Async generator to yield chunks from the Agent SDK and store history in Postgres."""
 
-async def clear_session_data():
-    await session.clear_session()
+    # If no conversation_id is provided, generate a new one
+    if conversation_id is None:
+        conversation_id = str(uuid.uuid4())
 
-async def get_session_data():
-    user_data = await session.get_items()
-    for user in user_data:
-        print (f"{user['role']}: {user['content']}")
+    # Get a database session
+    async for db_session in get_session():
+        # Create a PostgresSession to store agent chat history
+        agent_session = PostgresSession(db_session, conversation_id)
 
-# asyncio.run(clear_session_data())    
+        # Pass the custom session to Runner
+        result = Runner.run_streamed(
+            agent,
+            input=prompt,
+            session=agent_session,   # ✅ use Postgres-backed session
+        )
 
-# asyncio.run(get_session_data())
+        async for event in result.stream_events():
+            if event.type == "raw_response_event":
+                if isinstance(event.data, ResponseTextDeltaEvent) and event.data.delta:
+                    # Stream the agent's response back to the client
+                    yield event.data.delta
 
-# while True:
-
-#     prompt = input ('write prompt here: ')
-#     if prompt == 'exit':
-#         break
-
-#     res = Runner.run_sync(
-#         starting_agent= agent,
-#         input= prompt,
-#         session=session)
-
-#     print(res.final_output)
-
-async def main():
-    while True:
-        prompt = input ('\n|| write prompt here: ')
-        if prompt == 'exit':
-            break
-
-        res = Runner.run_streamed(
-            starting_agent= agent,
-            input= prompt,
-            session=session)
-        async for event in res.stream_events():
-            if event.type == "raw_response_event" and isinstance(event.data, ResponseTextDeltaEvent):
-                print(event.data.delta, end="", flush=True)
-
-
- 
-if __name__ == "__main__":
-    asyncio.run(main())
+            elif event.type == "run_item_stream_event" and event.name == "tool_called":
+                print(f"Agent called tool: {event.item.name}")
 

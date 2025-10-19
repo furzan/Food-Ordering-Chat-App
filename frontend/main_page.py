@@ -79,39 +79,64 @@ async def start():
     cl.user_session.set("username", user.identifier)
 
 
+
 @cl.on_message
 async def main(message: cl.Message):
     """
     This function is called every time a user sends a message.
-    Only authenticated users can send messages.
+    It now streams the response from the FastAPI backend to the Chainlit frontend.
     """
-    user = cl.user_session.get("user")
+    # Note: user is available via cl.user_session.get("user") but is unused for streaming logic.
     
-    # Show a loading message
+    # 1. Create a message object and send it immediately to reserve its spot
     msg = cl.Message(content="")
     await msg.send()
     
+    payload = {
+        "message": message.content,
+    }
+    
     try:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                base_url + '/message',
-                json={
-                    "message": message.content,
-                }
-            )
-            if response.status_code == 200:
-                data = response.json()
-                ans = data.get("message")
-            else:
-                ans = f"Error: {response.status_code}"
+        # Use httpx.AsyncClient for async requests
+        # Set timeout to None or a very high value for long-running streams
+        async with httpx.AsyncClient(timeout=None) as client:
             
+            # 2. Use client.stream() and async with to manage the response stream
+            async with client.stream(
+                "POST", 
+                base_url + '/message',
+                json=payload,
+            ) as response:
+                
+                # Check for an immediate non-streaming error
+                if response.status_code != 200:
+                    # Read the error body completely if the request failed
+                    error_text = await response.aread()
+                    raise Exception(f"API Error {response.status_code}: {error_text.decode()}")
+
+                # 3. Iterate over the stream chunk-by-chunk
+                async for chunk in response.aiter_bytes():
+                    # Decode the bytes chunk to a string token
+                    token = chunk.decode("utf-8")
+                    
+                    # 4. Stream the token to the Chainlit message for real-time display
+                    # This updates the message content on the UI incrementally
+                    await msg.stream_token(token)
+
+        # 5. Streaming is complete. Call update() to finalize the message.
+        # The content is already set by stream_token, so we just call update().
+        await msg.update()
+
     except Exception as e:
-        ans = e
-    
-    
-    # Update the message with the response
-    msg.content = ans
-    await msg.update()
+        # Handle exceptions (e.g., connection errors, invalid URLs)
+        error_content = f"An error occurred while streaming: {str(e)}"
+        
+        # Remove the incomplete message and send a new error message
+        await msg.remove() 
+        await cl.Message(
+            content=error_content, 
+            author="Error"
+        ).send()
 
 
 @cl.on_chat_end
