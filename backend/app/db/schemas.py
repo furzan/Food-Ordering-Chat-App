@@ -36,7 +36,6 @@ class CreateOrderRequest(BaseModel):
     items: List[order_item]
     
 class CartItemCreate(BaseModel):
-    username: str
     item_id: int
     quantity: int = 1
 
