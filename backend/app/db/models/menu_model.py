@@ -1,6 +1,6 @@
 from sqlmodel import SQLModel, Field, Column, Relationship
 import sqlalchemy.dialects.postgresql as pg
-from typing import Optional 
+from typing import Optional, List
 
 class Menu(SQLModel, table=True):
     item_id: Optional[int] = Field(default=None, primary_key=True, index=True)
@@ -8,4 +8,5 @@ class Menu(SQLModel, table=True):
     item_price: float
     
     order_items: list["OrderItem"] = Relationship(back_populates="menu_item")
+    cart_items: List["CartItem"] = Relationship(back_populates="menu_item")
 

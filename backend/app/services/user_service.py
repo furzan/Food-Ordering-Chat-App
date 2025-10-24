@@ -1,5 +1,6 @@
 from sqlmodel.ext.asyncio.session import AsyncSession
 from backend.app.db.models.user_model import Users
+from backend.app.db.models.conversation_msg_model import ConversationMessage
 from sqlmodel import select, desc
 from backend.app.db.schemas import user
 from passlib.context import CryptContext
@@ -43,4 +44,13 @@ class user_service:
         expires = datetime.now(timezone.utc) + timedelta(minutes=20)
         encode.update({"exp": expires})
         return jwt.encode(encode, "secret", algorithm="HS256")
+    
+    async def get_chat(self, username: str, session: AsyncSession):
+        statement = (
+            select(ConversationMessage)
+            .where(ConversationMessage.conversation_id == username)
+        )
+        result = await session.exec(statement)
+        messages = result.all()
+        return messages
     

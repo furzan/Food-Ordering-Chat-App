@@ -11,6 +11,7 @@ class CartItem(SQLModel, table=True):
     username: str = Field(foreign_key="users.username")
     item_id: int = Field(foreign_key="menu.item_id")
     quantity: int = Field(default=1)
+    menu_item: "Menu" = Relationship(back_populates="cart_items")
 
     def __repr__(self) -> str:  
         return f"<CartItem {self.cart_id} user={self.username} item_id={self.item_id} qty={self.quantity}>"

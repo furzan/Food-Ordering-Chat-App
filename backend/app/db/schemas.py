@@ -8,6 +8,9 @@ from datetime import datetime, date
 class user(BaseModel):
     username: str
     password: str
+    
+class usercontext(BaseModel):
+    username: str
 
 
 class token(BaseModel):

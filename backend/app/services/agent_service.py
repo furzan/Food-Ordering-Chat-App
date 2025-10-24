@@ -46,6 +46,9 @@ class PostgresSession:
             role = item.get("role")
             content = item.get("content")
             
+            if not role or role in (None, {"text": "None"}):
+                continue
+            
             # Normalize content storage
             if isinstance(content, str):
                 content_to_store = {"text": content}

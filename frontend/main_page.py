@@ -7,6 +7,28 @@ import os
 base_url  = os.getenv("BASE_SERVER_URL")
 AUTH_API_URL = os.getenv("AUTH_API_URL", "http://http://127.0.0.1:8000/api/v1/user/login")
 
+
+async def get_messages_from_db_api(username: str) -> list[dict]:
+    """Fetches messages from your FastAPI/Postgres API."""
+    api_url = f"http://localhost:8000/api/v1/user/chat?username={username}"
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(api_url)
+            response.raise_for_status() # Raise an exception for bad status codes
+            
+            # The API is expected to return a list of dictionaries like:
+            # [{'role': 'user', 'text': 'Hello!'}, {'role': 'assistant', 'text': 'Hi there.'}]
+            messages = response.json()
+            return messages
+        except httpx.HTTPStatusError as e:
+            print(f"HTTP Error fetching history: {e}")
+            return []
+        except Exception as e:
+            print(f"Error fetching history: {e}")
+            return []
+        
+
 @cl.password_auth_callback
 async def auth_callback(username: str, password: str) -> Optional[cl.User]:
     """
@@ -70,6 +92,42 @@ async def start():
     """
     user = cl.user_session.get("user")
     
+    
+    history_messages = await get_messages_from_db_api(user.identifier)
+
+    if history_messages:
+        # Loop through and send messages to the UI
+        for msg in history_messages:
+            role = msg.get("role")
+            content = msg.get("content")
+            content = content.get("text") if isinstance(content, dict) else content
+            
+            if role == "user":
+                # Display as user message
+                await cl.Message(
+                    content=content,
+                    author=user.identifier,
+                    type="user_message"
+                ).send()
+            elif role == "assistant":
+                # Display as assistant message
+                await cl.Message(
+                    content=content
+                ).send()
+            else:
+                # Skip unknown roles
+                continue
+        
+        await cl.Message(
+            content=f"Welcome back! Your chat history has been restored."
+        ).send()
+    else:
+        # No history - show welcome message
+        await cl.Message(
+            content=f"Welcome back, **{user.identifier}**! 👋\n\nHow can I help you today?"
+        ).send()
+    
+    
     # Display welcome message
     await cl.Message(
         content=f"Welcome back, **{user.identifier}**! 👋\n\nHow can I help you today?"
@@ -96,6 +154,8 @@ async def main(message: cl.Message):
         "message": message.content,
     }
     
+    user = cl.user_session.get("user")
+    
     try:
         # Use httpx.AsyncClient for async requests
         # Set timeout to None or a very high value for long-running streams
@@ -104,7 +164,7 @@ async def main(message: cl.Message):
             # 2. Use client.stream() and async with to manage the response stream
             async with client.stream(
                 "POST", 
-                base_url + '/message',
+                base_url + f'/message?username={user.identifier}',
                 json=payload,
             ) as response:
                 

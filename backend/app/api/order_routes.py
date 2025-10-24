@@ -57,12 +57,6 @@ async def get_most_recent_order(username: str, session: AsyncSession = Depends(g
 
 
 
-@router.get('/cartitems', status_code=status.HTTP_200_OK)
-async def get_cart_items(username: str, session: AsyncSession = Depends(get_session)):
-    """Return all cart items for the given username."""
-    cart_items = await orderservice.get_cart(username, session)
-    return cart_items
-
 @router.post('/cartitems', status_code=status.HTTP_201_CREATED)
 async def add_cart_item( username: str, cart_items: list[CartItemCreate], session: AsyncSession = Depends(get_session)):
     """Add an item to the cart for the given username."""
@@ -70,11 +64,23 @@ async def add_cart_item( username: str, cart_items: list[CartItemCreate], sessio
     new_cart_items = await orderservice.add_to_cart(username= username, items= items_as_dicts, session= session)
     return new_cart_items
 
+@router.get('/cartitems', status_code=status.HTTP_200_OK)
+async def get_cart_items(username: str, session: AsyncSession = Depends(get_session)):
+    """Return all cart items for the given username."""
+    cart_items = await orderservice.get_cart(username, session)
+    return cart_items
+
 @router.put('/cartitems', status_code=status.HTTP_200_OK)
 async def updatecart( username: str, cart_item: CartItemCreate, session: AsyncSession = Depends(get_session)):
     """Update an item in the cart for the given username."""
     updated_item = await orderservice.update_cart(username= username, item_id= cart_item.item_id, quantity= cart_item.quantity, session= session)
     return updated_item
+
+@router.delete('/cartitem', status_code=status.HTTP_200_OK)
+async def delete_cart_item( username: str, item_id: int, session: AsyncSession = Depends(get_session)):
+    """Delete a specific cart item for the given username."""
+    await orderservice.delete_cart_item(username= username, item_id= item_id, session= session)
+    return {"detail": f"Cart item {item_id} deleted successfully."}
 
 @router.delete('/cartitems', status_code=status.HTTP_200_OK)
 async def delete_cart( username: str, session: AsyncSession = Depends(get_session)):

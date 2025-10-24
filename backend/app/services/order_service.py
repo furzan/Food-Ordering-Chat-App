@@ -4,6 +4,7 @@ from backend.app.db.models.order_model import Order
 from backend.app.db.models.orderitems_model import OrderItem
 from backend.app.db.models.cart_model import CartItem
 from sqlmodel import select, desc
+from sqlalchemy.orm import selectinload
 from backend.app.db.schemas import user, order, menu, order_item
 from passlib.context import CryptContext
 from datetime import timedelta, datetime, timezone
@@ -103,30 +104,91 @@ class order_service:
             for c in cart_rows:
                 await session.delete(c)
             await session.commit()
+            
+            self.delete_cart( username, session)
 
         except Exception:
             await session.rollback()
             raise
 
         return {"order": new_order, "items": created_items}
-    
+
     async def get_most_recent_order(self, username: str, session: AsyncSession):
-        """Return the most recent Order for a username, or None if not found."""
-        statement = select(Order).where(Order.username == username).order_by(desc(Order.order_id)).limit(1)
+        """Return the most recent Order for a username, formatted as specified."""
+
+        statement = (
+            select(Order)
+            .options(
+                selectinload(Order.items).selectinload(OrderItem.menu_item),  # Eager load related data
+                selectinload(Order.user)
+            )
+            .where(Order.username == username)
+            .order_by(desc(Order.order_id))
+            .limit(1)
+        )
+
         result = await session.exec(statement)
-        rows = result.all()
-        return rows[0] if rows else None
-    
+        order = result.first()
+
+        if not order:
+            return None
+
+        items_data = []
+        total_amount = 0.0
+
+        for item in order.items:
+            menu_item = item.menu_item
+            item_data = {
+                "item_name": menu_item.item_name if menu_item else None,
+                "quantity": item.quantity,
+                "price": menu_item.item_price if menu_item else 0.0,
+            }
+            items_data.append(item_data)
+            if menu_item:
+                total_amount += item.quantity * menu_item.item_price
+
+        return {
+            "order_id": order.order_id,
+            "username": order.username,
+            "total_amount": total_amount,
+            "items": items_data,
+            "status": order.status,
+        }
+
     
     
     
     
     async def get_cart(self, username: str, session: AsyncSession):
-        """Retrieve the current cart for a user."""
-        statement = select(CartItem).where(CartItem.username == username)
+        """Retrieve the current cart for a user, including menu item details."""
+        statement = (
+            select(CartItem)
+            .where(CartItem.username == username)
+            .options(selectinload(CartItem.menu_item))
+        )
         result = await session.exec(statement)
         rows = result.all()
-        return rows if rows else None
+
+        if not rows:
+            return []
+
+        # Convert to JSON-friendly structure
+        cart_with_menu = []
+        for item in rows:
+            cart_with_menu.append({
+                "cart_id": item.cart_id,
+                "username": item.username,
+                "item_id": item.item_id,
+                "quantity": item.quantity,
+                "item_name": item.menu_item.item_name if item.menu_item else None,
+                "item_price": item.menu_item.item_price if item.menu_item else None,
+                "total_price": (
+                    item.quantity * item.menu_item.item_price
+                    if item.menu_item else None
+                ),
+            })
+
+        return cart_with_menu
 
     async def add_to_cart(self, username: str, item_id: int = None, quantity: int = 1, items: list = None, session: AsyncSession = None):
         """Add one or more items to the user's cart.
@@ -226,6 +288,16 @@ class order_service:
             await session.commit()
             await session.refresh(existing)
             return existing
+        
+    async def delete_cart_item( self, username: str, item_id: int, session: AsyncSession):
+        """Delete a specific cart item for a user."""
+        stmt = select(CartItem).where(CartItem.username == username, CartItem.item_id == item_id)
+        result = await session.exec(stmt)
+        cart_item = result.one_or_none()
+        if cart_item:
+            await session.delete(cart_item)
+            await session.commit()
+        
         
         
     async def delete_cart( self, username: str, session: AsyncSession):

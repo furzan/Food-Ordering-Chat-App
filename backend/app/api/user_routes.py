@@ -30,14 +30,18 @@ async def verify_login(form_data: OAuth2PasswordRequestForm = Depends(), session
 class UserMessage(BaseModel):
     message: str
 
-
 @router.post('/message', status_code= status.HTTP_200_OK)
-async def response_message( inp: UserMessage) -> dict:
+async def response_message( username: str, inp: UserMessage) -> dict:
     # response = {"message": f"You said: {inp.message}"}
     return StreamingResponse(
-        agent_stream_generator(inp.message, 'user3'),
+        agent_stream_generator(inp.message, username),
         # Crucially, set the correct media type for a text stream
         media_type="text/plain" 
         # Note: If you wanted full SSE, you'd use 'text/event-stream' 
         # and format the yield output as 'data: <token>\n\n'
     )
+    
+@router.get('/chat', status_code= status.HTTP_200_OK)
+async def get_chat_history( username: str, session: AsyncSession = Depends(get_session)):
+    messages = await userservice.get_chat(username, session)
+    return messages
