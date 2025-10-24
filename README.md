@@ -77,11 +77,11 @@ frontend/
    
 2. **Start the Backend**
    ```bash
-   uv run uvicorn backend:app --host 0.0.0.0 --port 8000 --reload
+   uv run fastapi dev backend/
    ```
 3. **Start the Frontend**
    ```bash
-   chainlit run main_page.py --port 8001
+   uv run chainlit run frontend\main_page.py --port 8001
    ```
 
 ## 📚 API Documentation
