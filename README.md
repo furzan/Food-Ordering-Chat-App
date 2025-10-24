@@ -71,25 +71,15 @@ frontend/
 - PostgreSQL database
 - UV package manager 
 
-### Installation
-
-1. **Clone the repository**
+1. **Install dependencies**
    ```bash
-   git clone <repository-url>
-   cd t13-fastapi-agents-mcp
-   ```
-
-2. **Install dependencies**
-   ```bash
-   # Using UV (recommended)
    uv sync
    
-
-5. **Start the Backend**
+2. **Start the Backend**
    ```bash
    uv run uvicorn backend:app --host 0.0.0.0 --port 8000 --reload
    ```
-6. **Start the Frontend**
+3. **Start the Frontend**
    ```bash
    chainlit run main_page.py --port 8001
    ```
@@ -145,7 +135,6 @@ frontend/
 - **Python-Decouple**: Environment variable management
 - **SQLAlchemy**: Advanced database toolkit
 
-
 ### Database Models
 - **Users**: User accounts and authentication
 - **Menu**: Restaurant menu items
@@ -155,5 +144,4 @@ frontend/
 - **ConversationMessage**: Chat history
 
 ```
-
 **Built with ❤️ using FastAPI, Chainlit, and AI Agents**
