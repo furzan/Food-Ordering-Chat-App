@@ -1,10 +1,76 @@
-# Python-generated files
+# ==============================
+# 🐍 Python
+# ==============================
 __pycache__/
-*.py[oc]
+*.py[cod]
+*.so
+*.egg-info/
 build/
 dist/
 wheels/
-*.egg-info
+.eggs/
 
-# Virtual environments
-.venv
+# ==============================
+# 🧪 Virtual Environments
+# ==============================
+.venv/
+.env/
+venv/
+ENV/
+env.bak/
+
+# ==============================
+# 🧩 FastAPI / OpenAI Agents SDK / MCP
+# ==============================
+# SQLite or temporary databases
+*.db
+*.sqlite3
+
+# Logs & cache
+*.log
+*.pid
+*.out
+*.bak
+*.tmp
+*.cache/
+logs/
+__pypackages__/
+
+# Local configs and secrets
+.env
+.env.*
+*.env.local
+*.secret
+
+# ==============================
+# 💬 Chainlit
+# ==============================
+# Chainlit runtime files
+.chainlit/
+chainlit.db
+.chainlit_cache/
+chainlit.log
+.chainlit.config.json
+
+# ==============================
+# 🧠 IDE / Editor
+# ==============================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ==============================
+# 💻 OS-generated files
+# ==============================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ==============================
+# 🧰 Node-related (if using any front-end tools)
+# ==============================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
