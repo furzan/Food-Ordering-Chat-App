@@ -121,11 +121,11 @@ async def start():
         await cl.Message(
             content=f"Welcome back! Your chat history has been restored."
         ).send()
-    else:
-        # No history - show welcome message
-        await cl.Message(
-            content=f"Welcome back, **{user.identifier}**! 👋\n\nHow can I help you today?"
-        ).send()
+    # else:
+    #     # No history - show welcome message
+    #     await cl.Message(
+    #         content=f"Welcome back, **{user.identifier}**! 👋\n\nHow can I help you today?"
+    #     ).send()
     
     
     # Display welcome message
